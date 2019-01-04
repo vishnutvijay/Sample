@@ -7,3 +7,19 @@
 //
 
 import Foundation
+
+protocol Listable {
+    var name: String { get }
+    func getID()
+}
+
+extension Listable {
+    func getID() {
+        print("Initial value of \(name)")
+    }
+}
+
+protocol Showable {
+    associatedtype T
+    var name1: T { get }
+}

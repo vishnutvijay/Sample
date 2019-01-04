@@ -11,34 +11,60 @@ import UIKit
 class SecondViewController: UIViewController {
 
     var name = ""
-    var questions: [Question]?
+    var questions = [Question]()
+    var questionDetails = [QuestionDetail]()
     @IBOutlet weak var label: UILabel!
     @IBOutlet weak var tableView: UITableView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         label.text = "Hello " + name
-        getTheQuestionList()
+//        getQuestionDetail()
+        getQuestionsFromNewClient()
     }
 
-    func getTheQuestionList() {
+    func getQuestionList() {
         guard let url = URL(string: "http://private-bf74b5-water2.apiary-mock.com/getAllQuestions") else { return }
-        let urlRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60.0)
-        let task = URLSession.shared.dataTask(with: urlRequest) { [unowned self] (data, response, error) in
-            if error != nil {
-                self.showAPIError(from: error)
-            } else {
-                do {
-                    let decoder = JSONDecoder()
-                    let result = try decoder.decode([Question].self, from: data!)
-                    self.questions = result
-                    self.tableView.reloadData()
-                } catch let error {
-                    self.showAPIError(from: error)
-                }
+        HTTPClient.shared.get(url, success: { [weak self] (result: [Question]) in
+            self?.questions = result
+            DispatchQueue.main.async {
+                self?.tableView.reloadData()
             }
+            self?.executeExamples(question: result.first!)
+            
+        }) { [weak self] error in
+            self?.showAPIError(from: error)
         }
-        task.resume()
+    }
+    
+    func getQuestionDetail() {
+        guard let url = URL(string: "https://private-bf74b5-water2.apiary-mock.com/getQuestionDetails") else { return }
+        HTTPClient.shared.get(url, success: { [weak self] (result: [QuestionDetail]) in
+            self?.questionDetails = result
+            DispatchQueue.main.async {
+                self?.tableView.reloadData()
+            }
+        }) { [weak self] error in
+            self?.showAPIError(from: error)
+        }
+    }
+    
+    func getQuestionsFromNewClient() {
+        guard let url = URL(string: "http://private-bf74b5-water2.apiary-mock.com/getAllQuestions") else { return }
+        HTTPClient.shared.get(url, success: { [weak self] (result: [Question]) in
+            self?.questions = result
+            DispatchQueue.main.async {
+                self?.tableView.reloadData()
+            }
+        }) { [weak self] error in
+            self?.showAPIError(from: error)
+        }
+    }
+    func executeExamples(question: Question) {
+        
+        let question = self.questions.first!
+        question.value(forKey: "questionText")
+        print(question.getID())
     }
 }
 
@@ -48,14 +74,18 @@ extension SecondViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return questions?.count ?? 0
+        return questions.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell.init(style: .subtitle, reuseIdentifier: "cell")
-        let question = questions?[indexPath.row] ?? Question()
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cell")
+        let question = questions[indexPath.row]
         cell.textLabel?.text = question.questionText
-        cell.detailTextLabel?.text = question.publishDate
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd-MM-YYYY hh:mm a"
+        cell.detailTextLabel?.text = dateFormatter.string(from: question.publishDate ?? Date())
         return cell
     }
+
 }

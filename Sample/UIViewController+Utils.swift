@@ -8,6 +8,12 @@
 
 import UIKit
 
-class UIViewController_Utils: Codable {
-
+extension UIViewController {
+    func showAPIError(from error: Error?, completion: (() -> Void)? = nil) {
+        guard let error = error else { return }
+        let alertController = UIAlertController(title: "Failed", message: error.localizedDescription, preferredStyle: .alert)
+        DispatchQueue.main.async {
+            self.present(alertController, animated: true, completion: completion)
+        }
+    }
 }

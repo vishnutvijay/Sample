@@ -7,3 +7,8 @@
 //
 
 import Foundation
+
+struct QuestionDetail: Decodable {
+    var name: String?
+    var category: String?
+}
